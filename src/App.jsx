@@ -1,5 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import './App.css';
+
+const TaskList = React.memo(({ tasks, onEdit, onDelete, onToggle }) => {
+  return (
+    <ul className="space-y-4">
+      {tasks.length === 0 ? (
+        <p className="text-gray-400 italic">Chưa có công việc nào...</p>
+      ) : (
+        tasks.map((task, index) => (
+          <li
+            key={index}
+            className={`flex justify-between items-center p-4 rounded-lg border hover:shadow ${task.completed ? 'bg-green-100 border-green-300' : 'bg-blue-50 border-blue-200'
+              }`}
+          >
+            <div>
+              <p
+                className={`font-semibold text-lg ${task.completed ? 'line-through text-gray-500' : 'text-blue-800'
+                  }`}
+              >
+                {task.text}
+              </p>
+              {(task.date || task.time) && (
+                <p className="text-sm text-blue-600 italic">
+                  📅 {task.date || 'Chưa chọn ngày'} ⏰ {task.time || 'Chưa chọn giờ'}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                checked={task.completed}
+                onChange={() => onToggle(index)}
+                className="w-5 h-5 accent-green-500"
+                title="Đánh dấu hoàn thành"
+              />
+              <button
+                className="text-yellow-500 hover:text-yellow-600 text-xl"
+                onClick={() => onEdit(index)}
+              >
+                ✏️
+              </button>
+              <button
+                className="text-red-500 hover:text-red-600 text-xl"
+                onClick={() => onDelete(index)}
+              >
+                🗑️
+              </button>
+            </div>
+          </li>
+        ))
+      )}
+    </ul>
+  );
+});
 
 function App() {
   const [tasks, setTasks] = useState([]);
@@ -7,6 +60,15 @@ function App() {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [editIndex, setEditIndex] = useState(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('tasks');
+    if (saved) setTasks(JSON.parse(saved));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }, [tasks]);
 
   const handleAddTask = () => {
     const trimmedTask = newTask.trim();
@@ -28,27 +90,30 @@ function App() {
     setTime('');
   };
 
-  const handleEditTask = (index) => {
+  const handleEditTask = useCallback((index) => {
     const task = tasks[index];
     setNewTask(task.text);
     setDate(task.date);
     setTime(task.time);
     setEditIndex(index);
-  };
+  }, [tasks]);
 
-  const handleDeleteTask = (index) => {
+  const handleDeleteTask = useCallback((index) => {
     setTasks(tasks.filter((_, i) => i !== index));
-  };
+  }, [tasks]);
 
-  const toggleCompleteTask = (index) => {
+  const toggleCompleteTask = useCallback((index) => {
     const updatedTasks = [...tasks];
     updatedTasks[index].completed = !updatedTasks[index].completed;
     setTasks(updatedTasks);
-  };
+  }, [tasks]);
+
+  const completedCount = useMemo(() => tasks.filter(task => task.completed).length, [tasks]);
 
   return (
     <div className="min-h-screen bg-blue-100 flex flex-col items-center justify-center p-6">
-      <h1 className="text-4xl font-bold text-blue-700 mb-8">📝 Danh sách công việc</h1>
+      <h1 className="text-4xl font-bold text-blue-700 mb-2">📝 Danh sách công việc</h1>
+      <p className="text-blue-600 mb-6">Đã hoàn thành: {completedCount} / {tasks.length}</p>
 
       <div className="w-full max-w-2xl bg-white p-10 rounded-2xl shadow-2xl">
         <div className="flex flex-col gap-4 mb-6">
@@ -81,54 +146,12 @@ function App() {
           </button>
         </div>
 
-        <ul className="space-y-4">
-          {tasks.length === 0 ? (
-            <p className="text-gray-400 italic">Chưa có công việc nào...</p>
-          ) : (
-            tasks.map((task, index) => (
-              <li
-                key={index}
-                className={`flex justify-between items-center p-4 rounded-lg border hover:shadow ${task.completed ? 'bg-green-100 border-green-300' : 'bg-blue-50 border-blue-200'
-                  }`}
-              >
-                <div>
-                  <p
-                    className={`font-semibold text-lg ${task.completed ? 'line-through text-gray-500' : 'text-blue-800'
-                      }`}
-                  >
-                    {task.text}
-                  </p>
-                  {(task.date || task.time) && (
-                    <p className="text-sm text-blue-600 italic">
-                      📅 {task.date || 'Chưa chọn ngày'} ⏰ {task.time || 'Chưa chọn giờ'}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    checked={task.completed}
-                    onChange={() => toggleCompleteTask(index)}
-                    className="w-5 h-5 accent-green-500"
-                    title="Đánh dấu hoàn thành"
-                  />
-                  <button
-                    className="text-yellow-500 hover:text-yellow-600 text-xl"
-                    onClick={() => handleEditTask(index)}
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    className="text-red-500 hover:text-red-600 text-xl"
-                    onClick={() => handleDeleteTask(index)}
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </li>
-            ))
-          )}
-        </ul>
+        <TaskList
+          tasks={tasks}
+          onEdit={handleEditTask}
+          onDelete={handleDeleteTask}
+          onToggle={toggleCompleteTask}
+        />
       </div>
     </div>
   );
