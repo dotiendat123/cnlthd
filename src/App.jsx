@@ -12,11 +12,11 @@ function App() {
     const trimmedTask = newTask.trim();
     if (!trimmedTask) return;
 
-    const taskData = { text: trimmedTask, date, time };
+    const taskData = { text: trimmedTask, date, time, completed: false };
 
     if (editIndex !== null) {
       const updatedTasks = [...tasks];
-      updatedTasks[editIndex] = taskData;
+      updatedTasks[editIndex] = { ...updatedTasks[editIndex], ...taskData };
       setTasks(updatedTasks);
       setEditIndex(null);
     } else {
@@ -38,6 +38,12 @@ function App() {
 
   const handleDeleteTask = (index) => {
     setTasks(tasks.filter((_, i) => i !== index));
+  };
+
+  const toggleCompleteTask = (index) => {
+    const updatedTasks = [...tasks];
+    updatedTasks[index].completed = !updatedTasks[index].completed;
+    setTasks(updatedTasks);
   };
 
   return (
@@ -82,17 +88,30 @@ function App() {
             tasks.map((task, index) => (
               <li
                 key={index}
-                className="flex justify-between items-center p-4 bg-blue-50 rounded-lg border border-blue-200 hover:shadow"
+                className={`flex justify-between items-center p-4 rounded-lg border hover:shadow ${task.completed ? 'bg-green-100 border-green-300' : 'bg-blue-50 border-blue-200'
+                  }`}
               >
                 <div>
-                  <p className="text-blue-800 font-semibold text-lg">{task.text}</p>
+                  <p
+                    className={`font-semibold text-lg ${task.completed ? 'line-through text-gray-500' : 'text-blue-800'
+                      }`}
+                  >
+                    {task.text}
+                  </p>
                   {(task.date || task.time) && (
                     <p className="text-sm text-blue-600 italic">
                       📅 {task.date || 'Chưa chọn ngày'} ⏰ {task.time || 'Chưa chọn giờ'}
                     </p>
                   )}
                 </div>
-                <div className="flex space-x-3">
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={task.completed}
+                    onChange={() => toggleCompleteTask(index)}
+                    className="w-5 h-5 accent-green-500"
+                    title="Đánh dấu hoàn thành"
+                  />
                   <button
                     className="text-yellow-500 hover:text-yellow-600 text-xl"
                     onClick={() => handleEditTask(index)}
