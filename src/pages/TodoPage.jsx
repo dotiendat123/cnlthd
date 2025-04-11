@@ -53,7 +53,7 @@ const TodoPage = () => {
             </p>
 
             {editIndex !== null && (
-                <p className="text-yellow-600 italic mb-4">🛠️ Đang chỉnh sửa công việc...</p>
+                <p className="text-yellow-600 italic mb-4"> Đang chỉnh sửa công việc...</p>
             )}
 
             <div className="w-full max-w-2xl bg-white p-10 rounded-2xl shadow-2xl">
